@@ -5,6 +5,11 @@ import type { ListMarketsQuery, ListMarketsResult, DreamDexAdapter } from "@cali
 import { MemoryStore } from "../src/storage.js";
 import { createApp } from "../src/app.js";
 import type { AppConfig } from "../src/config.js";
+import type { ExecutionInfo } from "@calibre/dreamdex-adapter";
+
+/** Fixed test pool/collateral used by the StubAdapter. */
+const TEST_POOL = "0x9df243eab4fbcbcefee61b8069cebac50d022133";
+const TEST_COLLATERAL = "0x70a86d8842fb63c4ad2b7cdddf530ebf1bb25d8e";
 
 function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
@@ -14,6 +19,7 @@ function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     rpcUrl: "https://rpc.test",
     chainId: 50312,
     dreamdexApiUrl: null,
+    dreamdexIndexerUrl: null,
     ai: null,
     audit: {
       minEdgeBp: 500n,
@@ -49,6 +55,16 @@ class StubAdapter implements DreamDexAdapter {
   async getSettlement(marketId: string): Promise<Settlement | null> {
     if (marketId === this.snapshot.marketId) return this.settlement;
     return null;
+  }
+  async getExecutionInfo(marketId: string): Promise<ExecutionInfo | null> {
+    return {
+      poolAddress: TEST_POOL,
+      collateral: TEST_COLLATERAL,
+      yesTokenId: "1000001",
+      noTokenId: "1000002",
+      expirySec: 1_800_000,
+      rowId: marketId,
+    };
   }
 }
 
@@ -232,10 +248,12 @@ describe("API integration", () => {
       walletAddress: "0x1111111111111111111111111111111111111111",
     });
     if (prep.status === 201) {
-      const trade = ((await prep.json()) as { trade: { tradeId: string; status: string; tx: { to: string; chainId: number; value: string } } }).trade;
+      const trade = ((await prep.json()) as { trade: { tradeId: string; status: string; tx: { to: string; chainId: number; value: string; data: string } } }).trade;
       expect(trade.status).toBe("prepared");
       expect(trade.tx.chainId).toBe(50312);
-      expect(trade.tx.to).toBe("0x1111111111111111111111111111111111111111");
+      expect(trade.tx.to).toBe(TEST_POOL);
+      expect(trade.tx.value).toBe("0");
+      expect(trade.tx.data).not.toBe("0x");
       const hash = "0x" + "ab".repeat(32);
       const conf = await client.post("/api/trades/confirm", {
         tradeId: trade.tradeId,

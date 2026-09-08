@@ -9,7 +9,6 @@
 
 import {
   FALLBACK_SOURCE,
-  FallbackAdapter,
   generateSnapshot,
   resolveAdapter,
   type DreamDexAdapter,
@@ -27,7 +26,7 @@ import {
   type TradeRecordWire,
 } from "@calibre/validation";
 import type { AuditResult, MarketSnapshot } from "@calibre/domain";
-import { API_URL, DREAMDEX_LIVE_URL } from "../config.js";
+import { API_URL, DREAMDEX_INDEXER_URL, DREAMDEX_LIVE_URL } from "../config.js";
 
 export interface Sourced<T> {
   data: T;
@@ -40,8 +39,10 @@ export interface ApiStatus {
   sourceLabel: string;
 }
 
-const fallbackAdapter = new FallbackAdapter();
-const { adapter: browserAdapter } = resolveAdapter({ liveBaseUrl: DREAMDEX_LIVE_URL ?? undefined });
+const { adapter: browserAdapter } = resolveAdapter({
+  indexerUrl: DREAMDEX_INDEXER_URL ?? undefined,
+  liveBaseUrl: DREAMDEX_LIVE_URL ?? undefined,
+});
 
 async function fetchFromApi<T>(path: string, init?: RequestInit): Promise<T | null> {
   if (!API_URL) return null;
@@ -139,7 +140,7 @@ export async function getSettlement(marketId: string): Promise<
       return { data: result.settlement, source: result.source, time: result.time };
     }
   }
-  const settlement = await fallbackAdapter.getSettlement(marketId);
+  const settlement = await browserAdapter.getSettlement(marketId);
   if (!settlement) return null;
   return {
     data: {
@@ -203,14 +204,22 @@ export async function prepareTrade(input: {
   auditId: string;
   amount: string;
   walletAddress: string;
-}): Promise<Sourced<TradeRecordWire>> {
+}): Promise<Sourced<TradeRecordWire> & { approvalTx: { to: string; value: string; data: string } | null }> {
   if (API_URL) {
-    const result = await fetchFromApi<{ trade: TradeRecordWire }>("/api/trades/prepare", {
+    const result = await fetchFromApi<{
+      trade: TradeRecordWire;
+      approvalTx: { to: string; value: string; data: string } | null;
+    }>("/api/trades/prepare", {
       method: "POST",
       body: JSON.stringify(input),
     });
     if (result !== null) {
-      return { data: result.trade, source: "calibre-api", time: Date.now() };
+      return {
+        data: result.trade,
+        source: "calibre-api",
+        time: Date.now(),
+        approvalTx: result.approvalTx,
+      };
     }
     throw new ApiError(503, "API unavailable for trade preparation");
   }

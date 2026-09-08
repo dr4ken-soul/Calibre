@@ -39,15 +39,17 @@ Calibre targets Somnia testnet:
 To try the execution flow:
 
 1. Add the Somnia testnet chain to your wallet. The app can do this for you: connect a wallet in the Execute section and press Switch to Somnia testnet when prompted.
-2. Get testnet STT from the faucet at https://testnet.somnia.network.
-3. Select a market, run the audit, and approve a guarded order. The wallet asks for one explicit approval per order.
+2. Get testnet tUSDC and STT from the SomniaHacks Telegram group faucet topic at https://t.me/+XHq0F0JXMyhmMzM0.
+3. Select a live market, run the audit, and approve a guarded order. The wallet asks for a collateral approval when the pool allowance is short, then the BinaryPool order itself.
 
 ## Environment variables
 
 Copy `.env.example` to `.env`. All values are placeholders, no real secrets are committed.
 
-- `VITE_API_URL`: base URL of the Calibre API. Leave empty to use the browser deterministic fallback for reads and audits.
-- `VITE_DREAMDEX_API_URL`: optional live DreamDEX market data base URL. Leave empty for the fallback feed.
+- `VITE_API_URL`: base URL of the Calibre API. Leave empty to use the browser data layer directly against the live DreamDEX indexer.
+- `VITE_DREAMDEX_INDEXER_URL`: DreamDEX GraphQL indexer URL. Defaults to the live Somnia testnet indexer; set `off` to force the labeled deterministic fallback feed.
+- `VITE_DREAMDEX_API_URL`: optional legacy live DreamDEX HTTP base URL, superseded by the indexer URL.
+- `DREAMDEX_INDEXER_URL`: server side DreamDEX GraphQL indexer URL, same default as the web setting.
 - `AI_PROVIDER`, `AI_MODEL`, `AI_API_KEY`: optional Groq configuration. Empty keeps the fully deterministic audit path.
 - Audit thresholds (`AUDIT_MIN_EDGE`, `AUDIT_MIN_CONFIDENCE`, `AUDIT_MIN_SECONDS_TO_EXPIRY`, and others) are documented in `.env.example`.
 
@@ -59,7 +61,7 @@ npm workspaces monorepo, TypeScript strict throughout.
 | --- | --- |
 | packages/domain | Audit engine: probability estimation, guards, decision, fixed-point formatting |
 | packages/validation | Zod schemas for every API boundary plus wire conversion |
-| packages/dreamdex-adapter | DreamDEX adapter interface, HTTP adapter, deterministic fallback feed |
+| packages/dreamdex-adapter | DreamDEX adapter interface, live GraphQL indexer adapter, HTTP adapter, labeled deterministic fallback feed |
 | apps/api | Express API: markets, audits, guarded trades, settlement poller, calibration, optional bounded Groq adjustment |
 | apps/web | React 19 web surface: Observe, Audit, Execute, Resolve, Learn, Protocol, Close |
 
@@ -75,10 +77,10 @@ Runs every workspace suite: domain 28 tests, validation 9, dreamdex-adapter 13, 
 
 ## Honest disclosures
 
-Two constraints shape the integration and both are disclosed in the product UI itself:
+Both integration boundaries are disclosed in the product UI itself:
 
-- **DreamDEX market data feed.** DreamDEX has not published a public SDK, API, or contract addresses for Event Contracts at hackathon time. Calibre therefore ships a deterministic fallback feed that is always labeled "deterministic fallback" wherever data appears. An HTTP adapter implementing the expected live endpoints is included and activates when a base URL is configured. The fallback is never presented as live data.
-- **Execution mode.** Because DreamDEX Event Contract addresses are unpublished, a confirmed order is a labeled self-transfer to your own wallet on Somnia testnet, not an Event Contract fill. The UI states this plainly in the Execute section and in the approval modal. The full guard, approval, transaction, and receipt flow is real and runs against the chain.
+- **DreamDEX market data feed.** Market data comes from the live DreamDEX GraphQL indexer on Somnia testnet and is labeled "DreamDEX indexer live" wherever data appears. A deterministic fallback feed remains available as a clearly labeled offline mode (set `VITE_DREAMDEX_INDEXER_URL=off`); it is never presented as live data.
+- **Execution mode.** A confirmed order is a real `placeBinaryOrder` call to the market's DreamDEX BinaryPool contract on Somnia testnet, encoded from the published `@somnia-chain/markets-sdk` ABI with the pool address read from the indexer row. The order cost is pulled in tUSDC through the wallet's ERC-20 allowance; when the allowance is short the wallet is asked for an explicit approval first. The full guard, approval, transaction, and receipt flow is real and runs against the chain.
 
 ## No-brand-symbol policy
 

@@ -10,6 +10,14 @@ export const RPC_URL = import.meta.env.VITE_RPC_URL ?? "https://dream-rpc.somnia
 export const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, "") ?? null;
 export const DREAMDEX_LIVE_URL =
   (import.meta.env.VITE_DREAMDEX_API_URL as string | undefined)?.trim() || null;
+const indexerEnv = (import.meta.env.VITE_DREAMDEX_INDEXER_URL as string | undefined)?.trim() ?? "";
+/** Live by default; set VITE_DREAMDEX_INDEXER_URL=off to force the labeled fallback. */
+export const DREAMDEX_INDEXER_URL =
+  indexerEnv === "" || indexerEnv === "off"
+    ? indexerEnv === "off"
+      ? null
+      : "https://dev.smk.somnia.host/v1/graphql"
+    : indexerEnv;
 
 export const EXPLORER_URL = "https://shannon-explorer.somnia.network";
 

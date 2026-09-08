@@ -84,6 +84,24 @@ export function Execute({ audit }: { audit: AuditResultWire | null }) {
       });
       const tx = prepared.data.tx;
       setTxPhase({ phase: "awaiting-wallet" });
+      // The pool pulls tUSDC through the wallet's ERC-20 allowance. When the
+      // on-chain allowance cannot cover the order cost, the API returns an
+      // approval tx that the wallet signs first (one extra explicit prompt).
+      if (prepared.approvalTx) {
+        const approvalHash = await wallet.sendTransaction({
+          to: prepared.approvalTx.to,
+          value: prepared.approvalTx.value,
+          data: prepared.approvalTx.data,
+        });
+        if (approvalHash === null) {
+          setTxPhase({
+            phase: "failed",
+            reason: "The collateral approval was rejected in the wallet. Nothing was sent.",
+          });
+          approveButtonRef.current?.focus();
+          return;
+        }
+      }
       const hash = await wallet.sendTransaction({
         to: tx.to,
         value: tx.value,
@@ -92,7 +110,7 @@ export function Execute({ audit }: { audit: AuditResultWire | null }) {
       if (hash === null) {
         setTxPhase({
           phase: "failed",
-          reason: "The transaction was rejected in the wallet. Nothing was sent.",
+          reason: "The order was rejected in the wallet. Nothing was sent.",
         });
         approveButtonRef.current?.focus();
         return;
@@ -190,9 +208,9 @@ export function Execute({ audit }: { audit: AuditResultWire | null }) {
               </>
             )}
             <p className="font-mono-tech text-xs leading-[1.5] text-[var(--color-ink-muted)]">
-              Execution mode: self-transfer demo. DreamDEX has not published
-              contract addresses, so a confirmed order is a labeled self-transfer
-              to your own address on Somnia testnet, not an Event Contract fill.
+              Execution mode: DreamDEX BinaryPool order. A confirmed order is a
+              real placeBinaryOrder call to the market's pool on Somnia testnet,
+              settled on chain by the DreamDEX resolution flow.
             </p>
           </div>
         </Panel>
@@ -254,7 +272,7 @@ export function Execute({ audit }: { audit: AuditResultWire | null }) {
             <PanelTitle>Approve</PanelTitle>
             <div className="space-y-4 px-5 pb-6 pt-4 sm:px-6 sm:pb-8">
               <label htmlFor="trade-amount" className="block text-xs font-semibold text-[var(--color-ink-muted)]">
-                Amount in STT
+                Amount in outcome tokens
               </label>
               <input
                 id="trade-amount"
@@ -266,8 +284,9 @@ export function Execute({ audit }: { audit: AuditResultWire | null }) {
                 aria-describedby="amount-help"
               />
               <p id="amount-help" className="font-mono-tech text-xs text-[var(--color-ink-muted)]">
-                Testnet STT only. The server rechecks guards before preparing
-                and rejects duplicate submissions.
+                Outcome token quantity for the selected direction. Cost is paid
+                in tUSDC collateral through your wallet's pool allowance. The
+                server rechecks guards before preparing and rejects duplicates.
               </p>
 
               <button
@@ -389,7 +408,7 @@ export function Execute({ audit }: { audit: AuditResultWire | null }) {
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--color-ink-muted)]">Amount</dt>
-                <dd className="font-mono-tech text-[var(--color-ink)]">{txPhase.amount} STT</dd>
+                <dd className="font-mono-tech text-[var(--color-ink)]">{txPhase.amount} tokens</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--color-ink-muted)]">Audit</dt>
@@ -399,9 +418,10 @@ export function Execute({ audit }: { audit: AuditResultWire | null }) {
               </div>
             </dl>
             <p className="mt-4 text-xs leading-[1.5] text-[var(--color-ink-muted)]">
-              The wallet will ask for one explicit approval. Execution mode is a
-              labeled self-transfer demo on Somnia testnet until DreamDEX
-              publishes contract addresses.
+              The wallet will ask for an explicit collateral approval when the
+              pool allowance is short, then the BinaryPool order itself. Both
+              are real Somnia testnet transactions. The order fills against the
+              live DreamDEX book or expires immediately as a market order.
             </p>
             <div className="mt-6 flex flex-col gap-2 sm:flex-row-reverse">
               <button

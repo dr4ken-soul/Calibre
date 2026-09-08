@@ -60,4 +60,4 @@ apps/web                   React surface with the seven sections
 - Trades always require the API, because the server must recheck guards against a fresh snapshot.
 - A wallet rejection is a failed state, never a silent retry.
 - Pending means submitted without a verified receipt. Confirmed requires the receipt check.
-- Until DreamDEX publishes Event Contract addresses, execution is a labeled self-transfer demo on Somnia testnet, disclosed in the UI and the approval modal.
+- Execution is a real DreamDEX BinaryPool order on Somnia testnet: placeBinaryOrder calldata encoded from the published SDK ABI, pool address read from the live indexer row, collateral pulled through the wallet's ERC-20 allowance with an explicit approval when short. Disclosed in the UI and the approval modal.

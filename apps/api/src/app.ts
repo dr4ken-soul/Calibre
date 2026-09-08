@@ -87,16 +87,11 @@ export function createApp(deps: AppDeps) {
   });
 
   const rpc = new HttpRpcClient(config.rpcUrl);
+  const fetchExecutionInfo = async (marketId: string) =>
+    (await adapter.getExecutionInfo?.(marketId)) ?? null;
   const tradeService = new TradeService(
-    {
-      chainId: SOMNIA_CHAIN_ID,
-      // Placeholder recipient is replaced by the wallet address at prepare time
-      // on the client; the API never holds keys and only shapes the payload.
-      fallbackRecipient: "0x0000000000000000000000000000000000000000",
-      rpc,
-      selfTransferDemoNote: "self transfer demo execution",
-    },
-    { store, now, fetchSnapshot: marketFromStoreOrAdapter },
+    { chainId: SOMNIA_CHAIN_ID, rpc },
+    { store, now, fetchSnapshot: marketFromStoreOrAdapter, fetchExecutionInfo },
   );
 
   const poller = new SettlementPoller(
@@ -291,20 +286,22 @@ export function createApp(deps: AppDeps) {
         return;
       }
       const tradeService = new TradeService(
-        {
-          chainId: SOMNIA_CHAIN_ID,
-          fallbackRecipient: walletAddress,
-          rpc,
-          selfTransferDemoNote: "self transfer demo execution",
-        },
-        { store, now, fetchSnapshot: marketFromStoreOrAdapter },
+        { chainId: SOMNIA_CHAIN_ID, rpc },
+        { store, now, fetchSnapshot: marketFromStoreOrAdapter, fetchExecutionInfo },
       );
-      const result = await tradeService.prepare({ ...audit, guards: guardsNow }, parsed.data.amount);
+      const result = await tradeService.prepare(
+        { ...audit, guards: guardsNow },
+        parsed.data.amount,
+        walletAddress,
+      );
       if (!result.ok) {
         res.status(409).json({ error: { code: result.code, message: result.message } });
         return;
       }
-      res.status(201).json({ trade: domainTradeToWire(result.trade) });
+      res.status(201).json({
+        trade: domainTradeToWire(result.trade),
+        approvalTx: result.approvalTx,
+      });
     })();
   });
 

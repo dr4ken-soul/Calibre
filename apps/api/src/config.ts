@@ -7,6 +7,7 @@ export interface AppConfig {
   dataDir: string;
   rpcUrl: string;
   chainId: number;
+  dreamdexIndexerUrl: string | null;
   dreamdexApiUrl: string | null;
   ai: AiProvider | null;
   audit: {
@@ -61,6 +62,7 @@ export function loadConfig(overrides?: {
     dataDir: overrides?.dataDir ?? env("DATA_DIR") ?? "data",
     rpcUrl: env("RPC_URL") ?? "https://dream-rpc.somnia.network",
     chainId: envNumber("VITE_CHAIN_ID", 50312),
+    dreamdexIndexerUrl: env("DREAMDEX_INDEXER_URL") ?? "https://dev.smk.somnia.host/v1/graphql",
     dreamdexApiUrl: env("DREAMDEX_API_URL") ?? null,
     ai,
     audit: {

@@ -15,7 +15,9 @@
     "@calibre/domain": "*",
     "@calibre/dreamdex-adapter": "*",
     "@calibre/validation": "*",
-    "express": "^5.0.1"
+    "@somnia-chain/markets-sdk": "^0.29.0",
+    "express": "^5.0.1",
+    "viem": "^2.56.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",

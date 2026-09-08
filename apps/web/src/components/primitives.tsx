@@ -34,7 +34,12 @@ export function PanelTitle({ children, hint }: { children: ReactNode; hint?: Rea
 
 export function SourceBadge({ source, stale, observedAt }: { source: string; stale?: boolean; observedAt?: number | null }) {
   const fallback = source === "deterministic-fallback";
-  const label = fallback ? "deterministic fallback" : source;
+  const label =
+    source === "dreamdex-indexer-live"
+      ? "DreamDEX indexer live"
+      : fallback
+        ? "deterministic fallback"
+        : source;
   return (
     <span className="font-mono-tech inline-flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-[var(--color-surface-raised)] px-3 py-1 text-xs text-[var(--color-ink-muted)]">
       <span

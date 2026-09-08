@@ -9,7 +9,10 @@ import { createApp } from "./app.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
-  const { adapter } = resolveAdapter({ liveBaseUrl: config.dreamdexApiUrl ?? undefined });
+  const { adapter } = resolveAdapter({
+    indexerUrl: config.dreamdexIndexerUrl ?? undefined,
+    liveBaseUrl: config.dreamdexApiUrl ?? undefined,
+  });
   const store = new JsonFileStore(config.dataDir);
   const { app, poller } = createApp({ adapter, store, config, now: () => Date.now() });
 

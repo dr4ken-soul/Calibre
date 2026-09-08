@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@calibre/domain": "*",
-    "@calibre/validation": "*"
+    "@calibre/validation": "*",
+    "@somnia-chain/markets-sdk": "^0.29.0"
   }
 }

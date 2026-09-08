@@ -1,16 +1,22 @@
 /**
  * Web unit tests: format helpers, SourceBadge labels, StatusPill tones,
  * the local audit path, and the Sourced wrapper contract used by Resolve.
+ *
+ * Tests run offline against the deterministic fallback adapter, never the
+ * live indexer, so assertions stay hermetic.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Force the offline data path: no API, no live DreamDEX indexer, so the
+// local fallback adapter is exercised deterministically.
+vi.mock("../src/config.js", () => ({
+  API_URL: null,
+  DREAMDEX_LIVE_URL: null,
+  DREAMDEX_INDEXER_URL: null,
+}));
 import { renderToString } from "react-dom/server";
-import {
-  formatAge,
-  formatCountdown,
-  SourceBadge,
-  StatusPill,
-} from "../src/components/primitives.js";
+import { formatAge, formatCountdown, SourceBadge, StatusPill } from "../src/components/primitives.js";
 import { auditResultSchema, marketSnapshotSchema } from "@calibre/validation";
 import { runAudit, listMarkets, getSettlement } from "../src/lib/data.js";
 
