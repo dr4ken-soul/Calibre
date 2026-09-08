@@ -1,0 +1,27 @@
+{
+  "name": "calibre",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Calibre: AI probability auditor and execution guard for DreamDEX Event Contracts on Somnia testnet",
+  "type": "module",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @calibre/api",
+    "dev:web": "npm run dev -w @calibre/web",
+    "build": "npm run build -w @calibre/domain && npm run build -w @calibre/validation && npm run build -w @calibre/dreamdex-adapter && npm run build -w @calibre/api && npm run build -w @calibre/web",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "smoke": "npm run build && npm run test"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

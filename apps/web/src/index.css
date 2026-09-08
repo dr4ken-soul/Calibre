@@ -1,0 +1,101 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-ink: #20251f;
+    --color-ink-muted: #5e655b;
+    --color-paper: #f4f0e7;
+    --color-surface: #fbf9f4;
+    --color-surface-raised: #e9e5da;
+    --color-line: #d3cec1;
+    --color-accent: #c9793d;
+    --color-accent-soft: #f0d4be;
+    --color-telemetry: #809b78;
+    --color-telemetry-soft: #dce6d8;
+    --color-success: #4f8061;
+    --color-success-soft: #ddeadf;
+    --color-danger: #b45f55;
+    --color-danger-soft: #f0dcd8;
+    --color-warning: #b77a32;
+    --color-warning-soft: #f1e2c7;
+    --color-focus: #a8562a;
+    --color-canvas: #e3e8df;
+
+    --font-sans: "Manrope", system-ui, sans-serif;
+    --font-mono: "DM Mono", ui-monospace, monospace;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background-color: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .font-mono-tech {
+    font-family: var(--font-mono);
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 560ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal[data-revealed="true"] {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .contour-path {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    transition: stroke-dashoffset 520ms cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .contour-path[data-progress="1"],
+  .contour-path[data-progress="2"],
+  .contour-path[data-progress="3"] {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .contour-path {
+    stroke-dashoffset: 0;
+  }
+}

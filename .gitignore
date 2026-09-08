@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.vite/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+
+# Local runtime data (JSON file store, fallback snapshots)
+data/
+*.sqlite
+*.db
+
+# Logs and OS noise
+*.log
+.DS_Store
+Thumbs.db
+
+# Test and coverage output
+coverage/
+
+# Editor
+.idea/
+.vscode/
+*.swp
