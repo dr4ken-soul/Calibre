@@ -119,6 +119,7 @@ export const marketsQuerySchema = z
     asset: z.string().optional(),
     status: lifecycle.optional(),
     expiryBefore: z.number().int().nonnegative().optional(),
+    expiryAfter: z.coerce.number().int().nonnegative().optional(),
     limit: z.coerce.number().int().min(1).max(100).optional(),
     cursor: z.string().optional(),
   })

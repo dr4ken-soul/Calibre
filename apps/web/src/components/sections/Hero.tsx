@@ -35,6 +35,14 @@ function pct(bps: string): string {
   return `${(Number(bps) * 100).toFixed(1)}%`;
 }
 
+function shortId(id: string): string {
+  return id.length <= 18 ? id : `${id.slice(0, 8)}…${id.slice(-6)}`;
+}
+
+function orNa(value: string | undefined | null): string {
+  return !value || value === "0" || value === "0.0" ? "n/a" : value;
+}
+
 export function Hero({ market }: { market: MarketSnapshotWire | null }) {
   const implied = market ? Number(market.impliedProbability) : null;
   const intensity = implied === null ? 0.5 : Math.min(1, Math.max(0, implied));
@@ -130,10 +138,10 @@ export function Hero({ market }: { market: MarketSnapshotWire | null }) {
                       {market.question}
                     </p>
                     <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                      <LabeledValue label="Market id" value={market.marketId} />
+                      <LabeledValue label="Market id" value={shortId(market.marketId)} />
                       <LabeledValue label="Implied" value={pct(market.impliedProbability)} />
-                      <LabeledValue label="Strike" value={market.strike} />
-                      <LabeledValue label="Volume 24h" value={market.volume24h} />
+                      <LabeledValue label="Strike" value={orNa(market.strike)} />
+                      <LabeledValue label="Volume 24h" value={orNa(market.volume24h)} />
                     </dl>
                   </div>
                 ) : (

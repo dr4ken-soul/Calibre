@@ -104,14 +104,29 @@ export function usePoll<T>(
   };
 }
 
-export function useMarkets(query: { asset?: string; status?: string } = {}) {
-  const fetcher = useCallback(
-    () =>
-      listMarkets({ ...query, limit: 12 }).then((r) =>
-        r.data.length === 0 ? { data: [], source: r.source, time: r.time } : r,
-      ),
-    [query.asset, query.status],
-  );
+export function useMarkets(query: { asset?: string; status?: string; minRunwayMs?: number } = {}) {
+  const fetcher = useCallback(async () => {
+    // Tiered default: tradable markets with runway first, then any tradable
+    // market, then any market, so the page degrades honestly instead of
+    // showing an expired list when nothing fresh exists yet.
+    const attempts: { asset?: string; status?: string; expiryAfter?: number; limit: number }[] = [
+      {
+        asset: query.asset,
+        status: query.status,
+        expiryAfter: Date.now() + (query.minRunwayMs ?? 0),
+        limit: 12,
+      },
+      { asset: query.asset, status: query.status, expiryAfter: Date.now(), limit: 12 },
+      { asset: query.asset, limit: 12 },
+    ];
+    let last: Awaited<ReturnType<typeof listMarkets>> | null = null;
+    for (const attempt of attempts) {
+      const result = await listMarkets(attempt);
+      if (result.data.length > 0) return result;
+      last = result;
+    }
+    return last;
+  }, [query.asset, query.status, query.minRunwayMs]);
   return usePoll<MarketSnapshotWire[]>(fetcher, []);
 }
 

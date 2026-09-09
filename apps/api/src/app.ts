@@ -143,6 +143,7 @@ export function createApp(deps: AppDeps) {
           asset: parsed.data.asset,
           status: parsed.data.status,
           expiryBefore: parsed.data.expiryBefore,
+          expiryAfter: parsed.data.expiryAfter,
           limit: parsed.data.limit,
           cursor: parsed.data.cursor ?? null,
         });

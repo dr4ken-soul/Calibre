@@ -33,6 +33,14 @@ function pct(bps: string): string {
   return `${(Number(bps) * 100).toFixed(2)}%`;
 }
 
+function shortId(id: string): string {
+  return id.length <= 18 ? id : `${id.slice(0, 8)}…${id.slice(-6)}`;
+}
+
+function orNa(value: string | undefined | null): string {
+  return !value || value === "0" || value === "0.0" ? "n/a" : value;
+}
+
 function useTicker(intervalMs = 1_000): number {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -214,7 +222,7 @@ export function Observe({
                   {markets.map((m) => (
                     <option key={m.marketId} value={m.marketId}>
                       {m.asset} {m.status === "trading" ? "Up or Down" : LIFECYCLE_LABELS[m.status]}{" "}
-                      {m.marketId.slice(-12)}
+                      {shortId(m.marketId)}
                     </option>
                   ))}
                 </select>
@@ -222,7 +230,9 @@ export function Observe({
                   <dl className="mt-4 space-y-3">
                     <div className="flex items-baseline justify-between gap-3">
                       <dt className="text-xs font-semibold text-[var(--color-ink-muted)]">Market id</dt>
-                      <dd className="font-mono-tech text-xs text-[var(--color-ink)]">{selected.marketId}</dd>
+                      <dd className="font-mono-tech text-xs text-[var(--color-ink)]" title={selected.marketId}>
+                        {shortId(selected.marketId)}
+                      </dd>
                     </div>
                     <div className="flex items-baseline justify-between gap-3">
                       <dt className="text-xs font-semibold text-[var(--color-ink-muted)]">Question</dt>
@@ -246,12 +256,15 @@ export function Observe({
             {selected ? (
               <div className="px-6 pb-6 pt-4 sm:px-8 sm:pb-8">
                 <p className="font-mono-tech text-[clamp(1.5rem,3vw,3rem)] font-medium leading-[1] tracking-[-0.04em] text-[var(--color-ink)]">
-                  {formatCountdown(selected.lockAt, now)}
+                  {selected.expiryAt <= now ? "Closed" : formatCountdown(selected.lockAt, now)}
                 </p>
                 <p className="font-mono-tech mt-3 text-xs leading-[1.5] text-[var(--color-ink-muted)]">
                   Locks at {new Date(selected.lockAt).toLocaleTimeString()}. Time
-                  to expiry {formatCountdown(selected.expiryAt, now)}. Guards
-                  require at least 120 seconds of runway.
+                  to expiry{" "}
+                  {selected.expiryAt <= now
+                    ? "closed"
+                    : formatCountdown(selected.expiryAt, now)}
+                  . Guards require at least 120 seconds of runway.
                 </p>
               </div>
             ) : (
@@ -274,19 +287,19 @@ export function Observe({
                   <div className="flex items-baseline justify-between gap-3">
                     <dt className="text-xs font-semibold text-[var(--color-ink-muted)]">Momentum</dt>
                     <dd className="font-mono-tech text-sm font-semibold text-[var(--color-ink)]">
-                      {selected.momentumBp} bp
+                      {selected.source === "dreamdex-indexer-live" ? "n/a" : `${selected.momentumBp} bp`}
                     </dd>
                   </div>
                   <div className="flex items-baseline justify-between gap-3">
                     <dt className="text-xs font-semibold text-[var(--color-ink-muted)]">Current price</dt>
                     <dd className="font-mono-tech text-sm font-semibold text-[var(--color-ink)]">
-                      {selected.currentPrice}
+                      {orNa(selected.currentPrice)}
                     </dd>
                   </div>
                   <div className="flex items-baseline justify-between gap-3">
                     <dt className="text-xs font-semibold text-[var(--color-ink-muted)]">Open interest</dt>
                     <dd className="font-mono-tech text-sm font-semibold text-[var(--color-ink)]">
-                      {selected.openInterest}
+                      {orNa(selected.openInterest)}
                     </dd>
                   </div>
                 </dl>

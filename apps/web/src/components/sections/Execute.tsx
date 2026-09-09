@@ -396,8 +396,13 @@ export function Execute({ audit }: { audit: AuditResultWire | null }) {
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between gap-4">
                 <dt className="text-[var(--color-ink-muted)]">Market</dt>
-                <dd className="font-mono-tech text-right text-[var(--color-ink)]">
-                  {audit?.marketId ?? "unknown"}
+                <dd
+                  className="font-mono-tech text-right text-[var(--color-ink)]"
+                  title={audit?.marketId ?? undefined}
+                >
+                  {audit?.marketId && audit.marketId.length > 18
+                    ? `${audit.marketId.slice(0, 8)}…${audit.marketId.slice(-6)}`
+                    : (audit?.marketId ?? "unknown")}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">

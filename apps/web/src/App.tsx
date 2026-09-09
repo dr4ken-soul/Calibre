@@ -19,7 +19,7 @@ import { Close } from "./components/sections/Close.js";
 import { useAudit, useMarkets } from "./hooks/useData.js";
 
 export function App() {
-  const markets = useMarkets();
+  const markets = useMarkets({ status: "trading", minRunwayMs: 180_000 });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const audit = useAudit();
 

@@ -194,9 +194,10 @@ export class GraphqlAdapter implements DreamDexAdapter {
       statusFilters.finalized = { _eq: true };
     }
     if (query.status === "voided") statusFilters.voided = { _eq: true };
-    if (query.expiryBefore !== undefined) {
-      where.expiry = { _lte: Math.floor(query.expiryBefore / 1000) };
-    }
+    const expiry: Record<string, number> = {};
+    if (query.expiryBefore !== undefined) expiry._lte = Math.floor(query.expiryBefore / 1000);
+    if (query.expiryAfter !== undefined) expiry._gte = Math.floor(query.expiryAfter / 1000);
+    if (Object.keys(expiry).length > 0) where.expiry = expiry;
     return Object.keys(statusFilters).length > 0
       ? { ...where, ...statusFilters }
       : where;
@@ -259,7 +260,8 @@ export class GraphqlAdapter implements DreamDexAdapter {
       strike,
       referencePrice: strike === "0" ? rawToDecimalString(row.markPrice) : strike,
       currentPrice: rawToDecimalString(row.markPrice),
-      lockAt: secToMs(row.tradingStart),
+      // Binary pools accept orders until expiry; tradingStart only marks the open.
+      lockAt: secToMs(row.expiry),
       expiryAt: secToMs(row.expiry),
       status,
       impliedProbabilityBp,

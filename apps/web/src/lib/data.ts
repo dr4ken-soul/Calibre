@@ -89,6 +89,8 @@ export async function getApiStatus(): Promise<ApiStatus> {
 export async function listMarkets(query: {
   asset?: string;
   status?: string;
+  expiryBefore?: number;
+  expiryAfter?: number;
   limit?: number;
 }): Promise<Sourced<MarketSnapshotWire[]>> {
   const parsed = marketsQuerySchema.safeParse(query);
@@ -105,7 +107,10 @@ export async function listMarkets(query: {
       return { data: result.markets, source: result.source, time: result.time };
     }
   }
-  const local = await browserAdapter.listMarkets({ ...query, status: query.status as MarketSnapshot["status"] | undefined });
+  const local = await browserAdapter.listMarkets({
+    ...query,
+    status: query.status as MarketSnapshot["status"] | undefined,
+  });
   return {
     data: local.markets.map(domainSnapshotToWire),
     source: local.markets[0]?.source ?? FALLBACK_SOURCE,

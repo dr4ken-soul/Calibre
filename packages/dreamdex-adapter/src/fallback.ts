@@ -216,6 +216,9 @@ export class FallbackAdapter {
     if (query.expiryBefore !== undefined) {
       filtered = filtered.filter((m) => m.expiryAt <= query.expiryBefore!);
     }
+    if (query.expiryAfter !== undefined) {
+      filtered = filtered.filter((m) => m.expiryAt >= query.expiryAfter!);
+    }
     const limit = query.limit ?? 50;
     let start = 0;
     if (query.cursor) {

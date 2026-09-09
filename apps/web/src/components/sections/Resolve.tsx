@@ -107,7 +107,7 @@ export function Resolve({
       </div>
 
       <Panel>
-        <PanelTitle hint={marketId ?? undefined}>Settlement timeline</PanelTitle>
+        <PanelTitle hint={marketId ? `${marketId.slice(0, 8)}…${marketId.slice(-6)}` : undefined}>Settlement timeline</PanelTitle>
         {state.kind === "loading" ? (
           <LoadingBlock label="Reading settlement" />
         ) : state.kind === "unavailable" ? (
@@ -128,7 +128,7 @@ export function Resolve({
                     key={step.id}
                     as="li"
                     index={i}
-
+                    className="relative border-l border-[var(--color-line)] pb-8 pl-6 last:border-l-0 last:pb-0 lg:border-l-0 lg:border-t lg:pb-0 lg:pl-0 lg:pt-6"
                   >
                     <div
                       aria-hidden="true"

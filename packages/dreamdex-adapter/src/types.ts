@@ -15,6 +15,7 @@ export interface ListMarketsQuery {
   asset?: string;
   status?: MarketSnapshot["status"];
   expiryBefore?: number;
+  expiryAfter?: number;
   limit?: number;
   cursor?: string | null;
 }

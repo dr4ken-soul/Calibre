@@ -62,6 +62,7 @@ export class HttpAdapter implements DreamDexAdapter {
     if (query.asset) params.set("asset", query.asset);
     if (query.status) params.set("status", query.status);
     if (query.expiryBefore !== undefined) params.set("expiryBefore", String(query.expiryBefore));
+    if (query.expiryAfter !== undefined) params.set("expiryAfter", String(query.expiryAfter));
     if (query.limit !== undefined) params.set("limit", String(query.limit));
     if (query.cursor) params.set("cursor", query.cursor);
     const qs = params.toString();
