@@ -13,6 +13,17 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { AuditResult, Settlement, SystemEvent, TradeRecord } from "@calibre/domain";
+import {
+  auditResultSchema,
+  domainAuditToWire,
+  domainSettlementToWire,
+  domainTradeToWire,
+  settlementSchema,
+  tradeRecordSchema,
+  wireAuditToDomain,
+  wireSettlementToDomain,
+  wireTradeToDomain,
+} from "@calibre/validation";
 
 export interface StoredSnapshotRecord {
   marketId: string;
@@ -50,9 +61,9 @@ export interface Store {
 
 interface FileShape {
   snapshots: StoredSnapshotRecord[];
-  audits: AuditResult[];
-  trades: TradeRecord[];
-  settlements: Settlement[];
+  audits: unknown[];
+  trades: unknown[];
+  settlements: unknown[];
   events: SystemEvent[];
 }
 
@@ -93,12 +104,34 @@ export class JsonFileStore implements Store {
   }
 
   private async persist(): Promise<void> {
-    // Serialize writes to avoid torn files when requests interleave.
+    // Serialize writes to avoid torn files when requests interleave. A failed
+    // write must not poison the chain, so the promise resets before the
+    // failure is rethrown.
     this.writing = this.writing.then(async () => {
       await mkdir(path.dirname(this.file), { recursive: true });
       await writeFile(this.file, JSON.stringify(this.data), "utf8");
     });
-    await this.writing;
+    try {
+      await this.writing;
+    } catch (error) {
+      this.writing = Promise.resolve();
+      throw error;
+    }
+  }
+
+  private parseAudit(entry: unknown): AuditResult | null {
+    const parsed = auditResultSchema.safeParse(entry);
+    return parsed.success ? wireAuditToDomain(parsed.data) : null;
+  }
+
+  private parseTrade(entry: unknown): TradeRecord | null {
+    const parsed = tradeRecordSchema.safeParse(entry);
+    return parsed.success ? wireTradeToDomain(parsed.data) : null;
+  }
+
+  private parseSettlement(entry: unknown): Settlement | null {
+    const parsed = settlementSchema.safeParse(entry);
+    return parsed.success ? wireSettlementToDomain(parsed.data) : null;
   }
 
   private async latest<T extends { marketId?: string; auditId?: string; tradeId?: string; id?: string }>(
@@ -129,46 +162,61 @@ export class JsonFileStore implements Store {
 
   async putAudit(audit: AuditResult): Promise<void> {
     await this.ensureLoaded();
-    const idx = this.data.audits.findIndex((a) => a.auditId === audit.auditId);
-    if (idx >= 0) this.data.audits[idx] = audit;
-    else this.data.audits.push(audit);
+    const wire = domainAuditToWire(audit);
+    const idx = this.data.audits.findIndex((a) => this.parseAudit(a)?.auditId === audit.auditId);
+    if (idx >= 0) this.data.audits[idx] = wire;
+    else this.data.audits.push(wire);
     await this.persist();
   }
 
   async getAudit(auditId: string): Promise<AuditResult | null> {
     await this.ensureLoaded();
-    return this.latest(this.data.audits, "auditId", auditId);
+    for (let i = this.data.audits.length - 1; i >= 0; i--) {
+      const audit = this.parseAudit(this.data.audits[i]);
+      if (audit && audit.auditId === auditId) return audit;
+    }
+    return null;
   }
 
   async listAudits(since = 0, limit = 100): Promise<AuditResult[]> {
     await this.ensureLoaded();
-    const filtered = this.data.audits.filter((a) => a.createdAt >= since);
+    const filtered = this.data.audits
+      .map((a) => this.parseAudit(a))
+      .filter((a): a is AuditResult => a !== null && a.createdAt >= since);
     return filtered.slice(-limit).reverse();
   }
 
   async putTrade(trade: TradeRecord): Promise<void> {
     await this.ensureLoaded();
-    const idx = this.data.trades.findIndex((t) => t.tradeId === trade.tradeId);
-    if (idx >= 0) this.data.trades[idx] = trade;
-    else this.data.trades.push(trade);
+    const wire = domainTradeToWire(trade);
+    const idx = this.data.trades.findIndex((t) => this.parseTrade(t)?.tradeId === trade.tradeId);
+    if (idx >= 0) this.data.trades[idx] = wire;
+    else this.data.trades.push(wire);
     await this.persist();
   }
 
   async getTrade(tradeId: string): Promise<TradeRecord | null> {
     await this.ensureLoaded();
-    return this.latest(this.data.trades, "tradeId", tradeId);
+    for (let i = this.data.trades.length - 1; i >= 0; i--) {
+      const trade = this.parseTrade(this.data.trades[i]);
+      if (trade && trade.tradeId === tradeId) return trade;
+    }
+    return null;
   }
 
   async listTrades(since = 0, limit = 100): Promise<TradeRecord[]> {
     await this.ensureLoaded();
-    const filtered = this.data.trades.filter((t) => t.preparedAt >= since);
+    const filtered = this.data.trades
+      .map((t) => this.parseTrade(t))
+      .filter((t): t is TradeRecord => t !== null && t.preparedAt >= since);
     return filtered.slice(-limit).reverse();
   }
 
   async findTradeByTxHash(txHash: string): Promise<TradeRecord | null> {
     await this.ensureLoaded();
     for (let i = this.data.trades.length - 1; i >= 0; i--) {
-      if (this.data.trades[i]!.txHash === txHash) return this.data.trades[i]!;
+      const trade = this.parseTrade(this.data.trades[i]);
+      if (trade && trade.txHash === txHash) return trade;
     }
     return null;
   }
@@ -176,28 +224,37 @@ export class JsonFileStore implements Store {
   async findOpenTradeForAudit(auditId: string): Promise<TradeRecord | null> {
     await this.ensureLoaded();
     for (let i = this.data.trades.length - 1; i >= 0; i--) {
-      const t = this.data.trades[i]!;
-      if (t.auditId === auditId && (t.status === "prepared" || t.status === "pending")) return t;
+      const trade = this.parseTrade(this.data.trades[i]);
+      if (trade && trade.auditId === auditId && (trade.status === "prepared" || trade.status === "pending")) {
+        return trade;
+      }
     }
     return null;
   }
 
   async putSettlement(settlement: Settlement): Promise<void> {
     await this.ensureLoaded();
-    const idx = this.data.settlements.findIndex((s) => s.marketId === settlement.marketId);
-    if (idx >= 0) this.data.settlements[idx] = settlement;
-    else this.data.settlements.push(settlement);
+    const wire = domainSettlementToWire(settlement);
+    const idx = this.data.settlements.findIndex((s) => this.parseSettlement(s)?.marketId === settlement.marketId);
+    if (idx >= 0) this.data.settlements[idx] = wire;
+    else this.data.settlements.push(wire);
     await this.persist();
   }
 
   async getSettlement(marketId: string): Promise<Settlement | null> {
     await this.ensureLoaded();
-    return this.latest(this.data.settlements, "marketId", marketId);
+    for (let i = this.data.settlements.length - 1; i >= 0; i--) {
+      const settlement = this.parseSettlement(this.data.settlements[i]);
+      if (settlement && settlement.marketId === marketId) return settlement;
+    }
+    return null;
   }
 
   async listSettlements(since = 0): Promise<Settlement[]> {
     await this.ensureLoaded();
-    return this.data.settlements.filter((s) => s.observedAt >= since);
+    return this.data.settlements
+      .map((s) => this.parseSettlement(s))
+      .filter((s): s is Settlement => s !== null && s.observedAt >= since);
   }
 
   async appendEvent(event: SystemEvent): Promise<void> {
@@ -228,7 +285,19 @@ export class JsonFileStore implements Store {
 
 /** In-memory store for tests and ephemeral runs. */
 export class MemoryStore implements Store {
-  private file: FileShape = emptyShape();
+  private file: {
+    snapshots: StoredSnapshotRecord[];
+    audits: AuditResult[];
+    trades: TradeRecord[];
+    settlements: Settlement[];
+    events: SystemEvent[];
+  } = {
+    snapshots: [],
+    audits: [],
+    trades: [],
+    settlements: [],
+    events: [],
+  };
 
   private latestBy<T>(list: T[], pred: (item: T) => boolean): T | null {
     for (let i = list.length - 1; i >= 0; i--) {

@@ -155,6 +155,38 @@ export function domainTradeToWire(trade: TradeRecord): TradeRecordWire {
   };
 }
 
+export function wireTradeToDomain(wire: TradeRecordWire): TradeRecord {
+  return {
+    tradeId: wire.tradeId,
+    auditId: wire.auditId,
+    marketId: wire.marketId,
+    direction: wire.direction,
+    amount: wire.amount,
+    maxSlippageBp: BigInt(Math.round(Number(wire.maxSlippageBp) * 10_000)),
+    status: wire.status,
+    tx: wire.tx,
+    executionMode: wire.executionMode,
+    txHash: wire.txHash,
+    preparedAt: wire.preparedAt,
+    submittedAt: wire.submittedAt,
+    confirmedAt: wire.confirmedAt,
+    failReason: wire.failReason,
+    source: wire.source,
+  };
+}
+
+export function wireSettlementToDomain(wire: SettlementWire): Settlement {
+  return {
+    marketId: wire.marketId,
+    status: wire.status,
+    outcome: wire.outcome,
+    closingPrice: wire.closingPrice,
+    resolvedAt: wire.resolvedAt,
+    source: wire.source,
+    observedAt: wire.observedAt,
+  };
+}
+
 export function calibrationRowToWire(row: AuditCalibrationRow): {
   auditId: string;
   marketId: string;
