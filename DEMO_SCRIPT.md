@@ -2,127 +2,226 @@
 
 Target duration: 2 minutes 30 seconds
 Audience: DreamDEX and Somnia hackathon judges
-Demo environment: Somnia testnet with a clearly labeled fallback if a live market is unavailable
+App: https://calibre-web-beryl.vercel.app (API: https://calibre-tvq3.onrender.com)
+Data: live DreamDEX indexer (dev.smk.somnia.host/v1/graphql), Somnia testnet, chain 50312
+
+## Before recording, 5 minutes of prep
+
+1. Open https://calibre-tvq3.onrender.com/api/health once and wait for the
+   "ok" JSON. The free-tier API sleeps after idle and needs about 50 seconds
+   to wake. Do this first so no part of the recording shows a cold start.
+2. Open the app in a clean browser window. The badge in the Observe header
+   must read "DreamDEX indexer live". If it says "deterministic fallback",
+   wait and hit Refresh (top right of Observe).
+3. Wallet: use a Somnia testnet wallet with STT for gas. Trades also need
+   tUSDC collateral from the SomniaHacks faucet topic
+   (https://t.me/+XHq0F0JXMyhmMzM0, same group as the STT faucet).
+4. Pick the recording market: in Observe, open the dropdown under the
+   "Markets" panel title. Fresh markets read like "ETH Up or Down 0x…" and
+   the "Time to lock" panel shows a real countdown, not 00:00. Markets roll
+   every 5 minutes, so the default selection is always fresh.
+5. Optional: add the Somnia testnet to the wallet first (chain 50312, RPC
+   https://dream-rpc.somnia.network) so the "Wrong chain" pill never appears.
 
 ## Core story
 
-A prediction market price looks actionable, but price alone does not prove that the trade is worth taking. Calibre audits the probability, checks execution risk, and records what happened after settlement.
+A prediction market price looks actionable, but price alone does not prove
+the trade is worth taking. Calibre audits the probability against the live
+DreamDEX book, checks execution guards, prepares a real BinaryPool order,
+and records what happened after settlement. No trade is a first-class
+outcome.
 
 ## 0:00 to 0:15, the problem
 
-Screen: Calibre landing surface with the live portal visible.
+Screen: landing Hero.
 
-Narration:
+DO:
 
-"Event Contracts make a directional decision simple. The hard part is knowing whether the price deserves your money. Calibre is an audit layer for DreamDEX Event Contracts. It compares the market price with an independent estimate, checks execution risk, and can say no trade."
+1. Show the "Live market state" card on the right: the Trading pill, the
+   asset ticker, the question, and the row Market id / Implied / Strike /
+   Volume 24h.
+2. Point at the "DreamDEX indexer live" badge with its age, for example
+   "5s ago".
 
-## 0:15 to 0:35, discover a market
+SAY: "Event Contracts make the direction simple. The hard part is knowing
+whether the price deserves your money. Calibre is an audit layer for
+DreamDEX Event Contracts: it reads the live indexer, compares the market
+probability with an independent estimate, and only prepares a real order
+when the guards pass. Everything on screen is live testnet data."
 
-Screen: Observe section and market discovery.
+## 0:15 to 0:40, observe a fresh market
 
-Actions:
+Screen: section 01 Observe.
 
-1. Connect the testnet wallet if needed.
-2. Select a live BTC or ETH Event Contract.
-3. Point out market ID, direction, probability, volume, expiry, and lifecycle.
-4. Point out the source timestamp.
+DO:
 
-Narration:
+1. Click the market dropdown under the "Markets" panel title and pick the
+   first "Up or Down" entry (a Trading market).
+2. Point at the Market id, Question, and Status rows below the dropdown.
+   Hover the Market id to show the full 0x id in the tooltip.
+3. Point at the "Time to lock" countdown: minutes counting down, plus the
+   "Time to expiry" line below it.
+4. Point at "Market pressure": Implied probability, Momentum, Current
+   price, Open interest. Values the indexer does not carry read "n/a",
+   never a fake zero.
+5. Point at the Order book table: Ask rows above Bid rows, prices are
+   implied probabilities in percent.
 
-"Every decision starts with a real market. Calibre reads the DreamDEX market ID, probability, order book, expiry, and on-chain lifecycle. The market is not treated as valid just because it appears in a list."
+SAY: "Every decision starts with a real market from the DreamDEX indexer.
+Market id, question, lifecycle, countdown, and the live order book all come
+from the protocol feed. Fields the venue does not provide, like momentum,
+read n/a instead of inventing a number."
 
-## 0:35 to 1:05, show the audit
+## 0:40 to 1:05, run the audit
 
-Screen: Audit section.
+Screen: section 02 Audit.
 
-Actions:
+DO:
 
-1. Start an audit.
-2. Show market-implied probability.
-3. Show Calibre probability.
-4. Expand evidence.
-5. Point out confidence, liquidity, and time to expiry.
+1. Click the "Audit this market" button at the top right of the Audit
+   section (next to the "Two probabilities, one decision" heading).
+2. Wait about a second. The split view appears: "Market implies" on the
+   left, the edge badge in the middle, "Calibre estimates" on the right.
+3. Read the decision banner under it: it is exactly one of "Guarded trade
+   available", "No trade", or "Insufficient data".
+4. Point at the Guards list: Data freshness, Market lifecycle, Time to
+   expiry, Edge threshold, Model confidence, Liquidity, Order book. Each
+   row shows pass, warn, or fail, plus critical or advisory.
+5. Point at the Evidence table with per-value sources and timestamps.
 
-Narration:
+SAY: "One click runs the audit on the API. The market says one probability,
+the audit estimates another from book depth, imbalance, and time pressure,
+and the difference is the edge. But edge alone never triggers a trade: the
+guards recheck data freshness, lifecycle, liquidity, and runway, and any
+critical failure blocks execution."
 
-"Calibre separates what the market believes from what the audit estimates. The difference is shown as an edge, but edge alone is not enough. The evidence includes liquidity, time to expiry, and the current contract state. Every value has a source and timestamp."
+## 1:05 to 1:30, execute or refuse
 
-## 1:05 to 1:30, demonstrate a no-trade decision
+Screen: section 03 Execute.
 
-Screen: Execute section with a failing guard.
+If the banner said No trade or Insufficient data (most common):
 
-Actions:
+1. Point at the disabled "Approve guarded order" button.
+2. Point at the reason list right below it, for example "The audit
+   decision must be trade before an order can be prepared" or "A critical
+   guard is failing, execution is blocked".
+3. Do not connect a wallet. Leave the button disabled.
 
-1. Show a stale, thin, or near-expiry condition.
-2. Point out the failing guard.
-3. Attempt to select the action.
-4. Show that approval remains disabled.
-5. Save the result as an avoided trade.
+SAY: "This is the important path. When a guard fails, Calibre refuses. The
+approve button stays disabled and the reason is stated, because a model
+opinion cannot override protocol constraints. Avoiding a weak market is a
+first-class outcome, and the audit is stored so it can be scored later."
 
-Narration:
+If the banner said Guarded trade available:
 
-"This is the important path. When liquidity is too thin or expiry is too close, Calibre does not force a trade. It records no trade as a successful risk decision. The action stays disabled because a model opinion cannot override protocol and execution constraints."
+1. Click "Connect wallet" in the Wallet panel on the left of Execute.
+2. Approve the connection in the wallet extension. The panel now shows the
+   Connected pill, your address, and "Somnia testnet selected".
+3. In the Approve panel, keep the amount at 0.01 or type a small testnet
+   amount into the "Amount in outcome tokens" field.
+4. Click "Approve guarded order".
 
-## 1:30 to 1:55, demonstrate an approved testnet action
+SAY: "Nothing moves without the user. The wallet connects through the
+standard provider, the amount is explicit, and the server rechecks the
+guards and the pool allowance before preparing anything."
 
-Screen: A second market or refreshed state with all guards passing.
+## 1:30 to 1:55, confirm and send
 
-Actions:
+Screen: the confirmation modal, then the wallet, then the transaction
+panels.
 
-1. Select the approved market.
-2. Show passing guards.
-3. Set a small testnet amount.
-4. Open final confirmation.
-5. Confirm market ID, direction, amount, limit price, and audit timestamp.
-6. Approve in the wallet.
+DO:
 
-Narration:
+1. In the modal, read out loud the Market id, Direction (Up or Down),
+   Amount, and audit id.
+2. Click "Continue to wallet". Cancel is also shown; point at it once.
+3. The wallet may prompt twice: first the tUSDC allowance approval for the
+   DreamDEX BinaryPool, then the placeBinaryOrder call itself. Approve both.
+4. Back in the app: the Pending panel appears with the real transaction
+   hash. Then the Confirmed panel appears with the same hash and an
+   explorer link. Click the explorer link once to show the tx on
+   shannon-explorer.somnia.network, then return.
 
-"When the edge survives the guards, the user still approves the final action. Calibre prepares a bounded testnet order and makes the exact market, direction, amount, price, and audit timestamp visible before the wallet request."
+SAY: "The order is a real placeBinaryOrder call to the market's own
+BinaryPool on Somnia testnet. If the tUSDC allowance is short, the wallet
+asks for the collateral approval first, then the order. Pending stays
+Pending until the receipt verifies, and the hash is the actual on-chain
+transaction, visible in the block explorer."
 
-## 1:55 to 2:15, show transaction state
+If the wallet is rejected or has no tUSDC: the Failed panel appears with
+"Dismiss and retry". Showing one rejection is fine and honest: say "the
+user can always refuse, and the app reports it instead of pretending
+success".
 
-Screen: Pending, then confirmed state.
+## 1:55 to 2:15, settlement
 
-Actions:
+Screen: section 04 Resolve.
 
-1. Show pending state.
-2. Show transaction hash.
-3. Show confirmed state.
+DO:
 
-Narration:
+1. Click "Resolve" in the top navigation pill.
+2. Show the settlement timeline: the dots move from Listed through
+   Trading to Locked to Resolved based on protocol status, not guesses.
+3. For a market that just expired during the demo (markets roll every 5
+   minutes): show the warning pill "Pending settlement" and the line
+   "Current status locked" while the protocol settles it.
+4. If a market reached a terminal state, show the Resolved pill, the
+   Outcome Up or Down pill, closing price, resolved time, and source badge.
+   If nothing settled yet, show the "No settlement yet" card and say why.
 
-"Transaction state is never simulated. Pending, confirmed, rejected, and failed are separate states. The transaction hash is stored only after the wallet returns it and the receipt is verified."
+SAY: "Settlement is read, never guessed. The outcome, closing price, and
+resolved time appear only after the protocol reports them, tied to the
+market id from the resolution events."
 
-## 2:15 to 2:30, show settlement and future
+## 2:15 to 2:30, calibration loop and close
 
-Screen: Resolve and Learn sections.
+Screen: sections 05 Learn and 07 Close.
 
-Actions:
+DO:
 
-1. Show lifecycle timeline.
-2. Show resolved or voided state.
-3. Show audit history and calibration metrics.
-4. End on the closing action.
+1. Click "Learn" in the top navigation pill.
+2. Point at the "7 days" range toggle and the "Audits recorded in range"
+   count. Every audit run in this demo is already counted.
+3. If the grid shows the honest empty state, read its text: "No audits were
+   recorded in the selected range. Run audits in the Audit section and let
+   markets settle, then this grid fills with real calibration data."
+4. Scroll or click "Close" to end on the closing panel.
 
-Narration:
+SAY: "Every audit links back to its settled outcome, so the estimate
+quality is scored over time instead of asserted. Calibre is a protocol-aware
+audit layer: probability, risk, execution, and settlement, all inspectable,
+all on live Somnia testnet data."
 
-"After settlement, Calibre links the outcome back to the original audit. This creates a calibration loop instead of a one-time prediction. The result is a safer way to use Event Contracts and a reusable audit layer for traders, consumer apps, and bots."
+## Contingencies
+
+- All trading markets vanish between rolls: the list tiers down to any
+  market, and countdowns show Closed for expired ones. Wait 1 to 2 minutes
+  and click Refresh.
+- The badge shows "deterministic fallback": the API was unreachable; wait
+  or retry, the badge flips back to "DreamDEX indexer live" on its own.
+- Wrong chain pill: click "Switch to Somnia testnet" and approve in the
+  wallet.
+- A guard flips between recording takes: that is the product working; say
+  so and continue. Never hide a failing guard.
+- Render API restart: the Learn counts can reset because the free tier has
+  an ephemeral disk; the empty state is honest, do not pad it.
 
 ## Recording checklist
 
-- Use a clean browser profile.
-- Confirm wallet is on the correct testnet.
-- Preload one passing market and one no-trade market.
-- Keep the market ID visible during the important steps.
-- Avoid showing secrets, seed phrases, or private keys.
-- Show the source timestamp before discussing a value.
-- Record a backup version with the deterministic testnet fallback.
-- Keep the cursor near the control being discussed.
-- Do not claim profitability.
-- Do not show fabricated settlement or performance data.
+- Clean browser profile, wallet on Somnia testnet (chain 50312) with STT,
+  and tUSDC if the trade path will be shown.
+- Warm the API with the /api/health check before pressing record.
+- Keep the selected market id visible during audit, execute, and resolve.
+- Show the source badge and its age before quoting any number.
+- Show the failing-guard path first; the trade path is the bonus, not the
+  proof.
+- Never show seed phrases or private keys.
+- Do not claim profitability or show any performance number that the Learn
+  grid did not compute from real audits.
 
 ## Judge takeaway
 
-Calibre is not another opinion generator. It is a protocol-aware decision workflow that makes the probability, risk, execution, and settlement of a DreamDEX Event Contract inspectable.
-
+Calibre is not another opinion generator. It is a protocol-aware decision
+workflow that makes the probability, risk, execution, and settlement of a
+DreamDEX Event Contract inspectable, with real indexer data and real
+BinaryPool execution on Somnia testnet.
