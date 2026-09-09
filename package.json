@@ -15,7 +15,8 @@
     "build": "npm run build -w @calibre/domain && npm run build -w @calibre/validation && npm run build -w @calibre/dreamdex-adapter && npm run build -w @calibre/api && npm run build -w @calibre/web",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "smoke": "npm run build && npm run test"
+    "smoke": "npm run build && npm run test",
+    "start": "npm run start -w @calibre/api"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

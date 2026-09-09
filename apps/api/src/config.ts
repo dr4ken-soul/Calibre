@@ -57,7 +57,7 @@ export function loadConfig(overrides?: {
   }
 
   return {
-    port: envNumber("API_PORT", 8787),
+    port: envNumber("PORT", envNumber("API_PORT", 8787)),
     allowedOrigin: env("ALLOWED_ORIGIN") ?? null,
     dataDir: overrides?.dataDir ?? env("DATA_DIR") ?? "data",
     rpcUrl: env("RPC_URL") ?? "https://dream-rpc.somnia.network",
