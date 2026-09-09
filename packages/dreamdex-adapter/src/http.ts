@@ -36,7 +36,7 @@ export class HttpAdapter implements DreamDexAdapter {
 
   constructor(config: HttpAdapterConfig) {
     this.baseUrl = config.baseUrl;
-    this.fetchImpl = config.fetchImpl ?? fetch;
+    this.fetchImpl = config.fetchImpl ?? fetch.bind(globalThis);
     this.timeoutMs = config.timeoutMs ?? 8_000;
   }
 

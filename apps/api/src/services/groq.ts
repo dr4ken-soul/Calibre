@@ -35,7 +35,7 @@ export class GroqProvider implements AiProvider {
       apiKey: config.apiKey,
       model: config.model,
       baseUrl: config.baseUrl ?? "https://api.groq.com/openai/v1",
-      fetchImpl: config.fetchImpl ?? fetch,
+      fetchImpl: config.fetchImpl ?? fetch.bind(globalThis),
       timeoutMs: config.timeoutMs ?? 10_000,
     };
     this.modelLabel = config.model;

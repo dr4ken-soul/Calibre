@@ -153,7 +153,7 @@ export class GraphqlAdapter implements DreamDexAdapter {
 
   constructor(config: GraphqlAdapterConfig) {
     this.indexerUrl = config.indexerUrl;
-    this.fetchImpl = config.fetchImpl ?? fetch;
+    this.fetchImpl = config.fetchImpl ?? fetch.bind(globalThis);
     this.timeoutMs = config.timeoutMs ?? 8_000;
   }
 

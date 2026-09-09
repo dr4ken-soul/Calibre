@@ -37,6 +37,24 @@ describe("http adapter", () => {
     await expect(adapter.listMarkets({})).rejects.toThrow();
   });
 
+  it("binds the default fetch to globalThis so browsers do not throw Illegal invocation", async () => {
+    const originalFetch = globalThis.fetch;
+    const receiverStrictFetch = function (this: unknown): Response {
+      if (this !== globalThis) {
+        throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation");
+      }
+      return okJson({ markets: [], nextCursor: null });
+    };
+    globalThis.fetch = receiverStrictFetch as unknown as typeof fetch;
+    try {
+      const adapter = new HttpAdapter({ baseUrl: "https://example.test" });
+      const result = await adapter.listMarkets({});
+      expect(result.markets).toHaveLength(0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("resolves to the live adapter when a base url is configured", () => {
     const live = resolveAdapter({ liveBaseUrl: "https://dreamdex.example" });
     expect(live.usingLive).toBe(true);

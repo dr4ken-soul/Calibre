@@ -133,6 +133,24 @@ describe("graphql adapter", () => {
     await expect(adapter.listMarkets({})).rejects.toThrow();
   });
 
+  it("binds the default fetch to globalThis so browsers do not throw Illegal invocation", async () => {
+    const originalFetch = globalThis.fetch;
+    const receiverStrictFetch = function (this: unknown): Response {
+      if (this !== globalThis) {
+        throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation");
+      }
+      return okJson({ data: { Market: [] } });
+    };
+    globalThis.fetch = receiverStrictFetch as unknown as typeof fetch;
+    try {
+      const adapter = new GraphqlAdapter({ indexerUrl: "https://dev.smk.somnia.host/v1/graphql" });
+      const result = await adapter.listMarkets({ asset: "eth" });
+      expect(result.markets).toHaveLength(0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("resolves to the graphql adapter when an indexer url is configured", () => {
     const live = resolveAdapter({ indexerUrl: "https://dev.smk.somnia.host/v1/graphql" });
     expect(live.usingLive).toBe(true);
